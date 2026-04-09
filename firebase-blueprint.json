@@ -1,0 +1,74 @@
+{
+  "entities": {
+    "Transaction": {
+      "title": "Transaction",
+      "description": "A financial transaction record",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID of the user who owns this transaction" },
+        "amount": { "type": "number", "description": "The amount of the transaction (positive for income, negative for expense)" },
+        "category": { "type": "string", "description": "The category of the transaction (e.g., Food, Rent, Salary)" },
+        "description": { "type": "string", "description": "A brief description of the transaction" },
+        "date": { "type": "string", "format": "date-time", "description": "The date and time of the transaction" },
+        "type": { "type": "string", "enum": ["income", "expense"], "description": "The type of transaction" },
+        "aiCategorized": { "type": "boolean", "description": "Whether the category was assigned by AI" }
+      },
+      "required": ["userId", "amount", "category", "date", "type"]
+    },
+    "Budget": {
+      "title": "Budget",
+      "description": "A monthly budget for a specific category",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "category": { "type": "string" },
+        "limit": { "type": "number" },
+        "month": { "type": "string", "description": "Month in YYYY-MM format" }
+      },
+      "required": ["userId", "category", "limit", "month"]
+    },
+    "Goal": {
+      "title": "Goal",
+      "description": "A financial goal",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "targetAmount": { "type": "number" },
+        "currentAmount": { "type": "number" },
+        "deadline": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "targetAmount", "currentAmount"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User specific settings and profile data",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "currency": { "type": "string", "default": "USD" },
+        "riskTolerance": { "type": "string", "enum": ["low", "medium", "high"], "default": "medium" }
+      },
+      "required": ["email"]
+    }
+  },
+  "firestore": {
+    "transactions": {
+      "schema": "Transaction",
+      "description": "Collection of user transactions"
+    },
+    "budgets": {
+      "schema": "Budget",
+      "description": "Collection of user budgets"
+    },
+    "goals": {
+      "schema": "Goal",
+      "description": "Collection of user financial goals"
+    },
+    "users": {
+      "schema": "UserProfile",
+      "description": "Collection of user profiles"
+    }
+  }
+}

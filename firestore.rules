@@ -1,0 +1,84 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+    
+    function isValidTransaction(data) {
+      return data.keys().hasAll(['userId', 'amount', 'category', 'date', 'type']) &&
+             data.userId == request.auth.uid &&
+             data.amount is number &&
+             data.category is string && data.category.size() > 0 && data.category.size() < 50 &&
+             data.date is string &&
+             data.type in ['income', 'expense'];
+    }
+
+    function isValidBudget(data) {
+      return data.keys().hasAll(['userId', 'category', 'limit', 'month']) &&
+             data.userId == request.auth.uid &&
+             data.category is string &&
+             data.limit is number && data.limit >= 0 &&
+             data.month is string;
+    }
+
+    function isValidGoal(data) {
+      return data.keys().hasAll(['userId', 'name', 'targetAmount', 'currentAmount']) &&
+             data.userId == request.auth.uid &&
+             data.name is string && data.name.size() > 0 &&
+             data.targetAmount is number && data.targetAmount > 0 &&
+             data.currentAmount is number && data.currentAmount >= 0;
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['email']) &&
+             data.email is string &&
+             (!('displayName' in data) || (data.displayName is string && data.displayName.size() < 100)) &&
+             (!('currency' in data) || (data.currency is string && data.currency.size() == 3)) &&
+             (!('riskTolerance' in data) || (data.riskTolerance in ['low', 'medium', 'high']));
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /transactions/{transactionId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidTransaction(request.resource.data);
+      allow update: if isDocOwner() && isValidTransaction(request.resource.data);
+      allow delete: if isDocOwner();
+    }
+
+    match /budgets/{budgetId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidBudget(request.resource.data);
+      allow update: if isDocOwner() && isValidBudget(request.resource.data);
+      allow delete: if isDocOwner();
+    }
+
+    match /goals/{goalId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidGoal(request.resource.data);
+      allow update: if isDocOwner() && isValidGoal(request.resource.data);
+      allow delete: if isDocOwner();
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data);
+    }
+  }
+}
